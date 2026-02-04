@@ -1,0 +1,357 @@
+# API Reference: http - HTTP Request Operations
+
+A module that provides functions for sending HTTP GET requests and receiving responses.
+
+## 📋 Contents
+
+- [Overview](#overview)
+- [Functions](#functions)
+- [Examples](#examples)
+
+---
+
+## Overview
+
+### Purpose
+
+- Send HTTP GET requests
+- Read response body
+- Decode JSON
+- Get response headers
+
+### Key Features
+
+- ✅ Simple GET requests
+- ✅ JSON deserialization
+- ✅ Header reading
+- ✅ Error handling
+
+---
+
+## Functions
+
+### 1. `GetBody(url string) (string, error)`
+
+Makes an HTTP GET request and returns the body as a string.
+
+**Signature:**
+```go
+func GetBody(url string) (string, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+
+**Return Value:**
+- `body` (string): Response body
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Makes HTTP GET request
+- Returns error if status code is not 200 OK
+- Converts body to string and returns
+
+**Error Cases:**
+- Network error: returns error
+- Non-200 status: `fmt.Errorf("status code: %d")`
+- Body read error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body, err := gosugar.GetBody("https://example.com")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Body:", body[:100]+"...")
+}
+```
+
+---
+
+### 2. `MustGetBody(url string) string`
+
+Like `GetBody` but panics if error occurs.
+
+**Signature:**
+```go
+func MustGetBody(url string) string
+```
+
+**Parameters:**
+- `url` (string): URL to request
+
+**Return Value:**
+- `body` (string): Response body
+
+**Behavior:**
+- Calls GetBody
+- Panics if error occurs
+- Otherwise returns body
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	// Returns if successful
+	body := gosugar.MustGetBody("https://httpbin.org/get")
+	fmt.Println("Success:", body[:50])
+
+	// Panics if error
+	// body := gosugar.MustGetBody("https://invalid-url")
+}
+```
+
+---
+
+### 3. `GetJSON[T any](url string) (T, error)`
+
+Makes an HTTP GET request and decodes the JSON response.
+
+**Signature:**
+```go
+func GetJSON[T any](url string) (T, error)
+```
+
+**Type Parameter:**
+- `T`: Struct type to decode into
+
+**Parameters:**
+- `url` (string): URL to request
+
+**Return Value:**
+- `result` (T): Decoded data
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Calls GetBody
+- Decodes JSON using `json.Unmarshal()`
+- Returns value of type T on success
+
+**Error Cases:**
+- GetBody error: returns error
+- JSON decode error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	type Post struct {
+		ID    int    `json:"id"`
+		Title string `json:"title"`
+		Body  string `json:"body"`
+	}
+
+	post, err := gosugar.GetJSON[Post]("https://jsonplaceholder.typicode.com/posts/1")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Printf("Post: %d - %s\n", post.ID, post.Title)
+}
+```
+
+---
+
+### 4. `GetHeader(url string) (http.Header, error)`
+
+Makes an HTTP GET request and returns response headers.
+
+**Signature:**
+```go
+func GetHeader(url string) (http.Header, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+- `error`: Error if occurs
+
+**Behavior:**
+- Makes HTTP GET request
+- Returns error if status code is not 200
+- Returns headers
+- `http.Header` is case-insensitive map
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	headers, err := gosugar.GetHeader("https://example.com")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+	fmt.Println("Server:", headers.Get("Server"))
+}
+```
+
+---
+
+### 5. `MustGetHeader(url string) http.Header`
+
+Like `GetHeader` but panics if error occurs.
+
+**Signature:**
+```go
+func MustGetHeader(url string) http.Header
+```
+
+**Parameters:**
+- `url` (string): URL to request
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	headers := gosugar.MustGetHeader("https://example.com")
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+}
+```
+
+---
+
+## Examples
+
+### Example 1: API Call
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	type User struct {
+		ID    int    `json:"id"`
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	}
+
+	// Get user from JSONPlaceholder test API
+	user, err := gosugar.GetJSON[User](
+		"https://jsonplaceholder.typicode.com/users/1",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Printf("User: %s (%s)\n", user.Name, user.Email)
+}
+```
+
+### Example 2: Plain Text Response
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	// Get plain text response
+	body, err := gosugar.GetBody("https://httpbin.org/html")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Response:")
+	fmt.Println(body[:200])
+}
+```
+
+### Example 3: HTTP Headers
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	headers, err := gosugar.GetHeader("https://github.com")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("=== GitHub Headers ===")
+	fmt.Println("Server:", headers.Get("Server"))
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+	fmt.Println("Connection:", headers.Get("Connection"))
+}
+```
+
+---
+
+## Limitations
+
+⚠️ **Current Version Limitations:**
+
+1. **Only GET requests**: POST, PUT, DELETE not yet available
+2. **Only 200 OK**: Other success status codes (3xx) treated as errors
+3. **No custom headers**: Cannot add Authorization etc.
+4. **No timeout**: May wait indefinitely on slow connections
+
+**Workaround:** Use `net/http` package directly.
+
+---
+
+## Related Modules
+
+- **`errors.go`**: Error handling
+- **`getting-started.md`**: Getting started guide
