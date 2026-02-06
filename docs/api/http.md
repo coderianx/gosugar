@@ -15,13 +15,15 @@ A module that provides functions for sending HTTP GET requests and receiving res
 ### Purpose
 
 - Send HTTP GET requests
+- Send HTTP POST requests
 - Read response body
 - Decode JSON
 - Get response headers
 
 ### Key Features
 
-- ✅ Simple GET requests
+- ✅ GET requests
+- ✅ POST requests
 - ✅ JSON deserialization
 - ✅ Header reading
 - ✅ Error handling
@@ -257,6 +259,284 @@ func main() {
 
 ---
 
+### 6. `PostBody(url string, body io.Reader, contentType string) (string, error)`
+
+Makes an HTTP POST request and returns the response body as a string.
+
+**Signature:**
+```go
+func PostBody(url string, body io.Reader, contentType string) (string, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): POST request body
+- `contentType` (string): Content-Type header value (e.g., "application/json")
+
+**Return Value:**
+- `body` (string): Response body
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Makes HTTP POST request
+- Returns error if status code is not 200 OK
+- Converts body to string and returns
+
+**Error Cases:**
+- Network error: returns error
+- Non-200 status: `fmt.Errorf("status code: %d")`
+- Body read error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("test data"))
+	
+	response, err := gosugar.PostBody(
+		"https://httpbin.org/post",
+		body,
+		"application/x-www-form-urlencoded",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Response:", response[:100])
+}
+```
+
+---
+
+### 7. `MustPostBody(url string, body io.Reader, contentType string) string`
+
+Like `PostBody` but panics if error occurs.
+
+**Signature:**
+```go
+func MustPostBody(url string, body io.Reader, contentType string) string
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): POST request body
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `body` (string): Response body
+
+**Behavior:**
+- Calls PostBody
+- Panics if error occurs
+- Otherwise returns response
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("data"))
+	
+	response := gosugar.MustPostBody(
+		"https://httpbin.org/post",
+		body,
+		"text/plain",
+	)
+	fmt.Println("Response:", response[:50])
+}
+```
+
+---
+
+### 8. `PostJSON[T any](url string, payload any) (T, error)`
+
+Makes an HTTP POST request with JSON payload and decodes the JSON response.
+
+**Signature:**
+```go
+func PostJSON[T any](url string, payload any) (T, error)
+```
+
+**Type Parameter:**
+- `T`: Struct type to decode response into
+
+**Parameters:**
+- `url` (string): URL to request
+- `payload` (any): Data to encode as JSON
+
+**Return Value:**
+- `result` (T): Decoded response data
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Encodes payload to JSON
+- Calls PostBody
+- Decodes JSON response using `json.Unmarshal()`
+- Returns value of type T on success
+
+**Error Cases:**
+- JSON encode error: returns error
+- PostBody error: returns error
+- JSON decode error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	type CreatePostRequest struct {
+		Title  string `json:"title"`
+		Body   string `json:"body"`
+		UserID int    `json:"userId"`
+	}
+
+	type CreatePostResponse struct {
+		ID     int    `json:"id"`
+		Title  string `json:"title"`
+		Body   string `json:"body"`
+		UserID int    `json:"userId"`
+	}
+
+	payload := CreatePostRequest{
+		Title:  "New Post",
+		Body:   "This is a new post",
+		UserID: 1,
+	}
+
+	response, err := gosugar.PostJSON[CreatePostResponse](
+		"https://jsonplaceholder.typicode.com/posts",
+		payload,
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Printf("Created Post: %d - %s\n", response.ID, response.Title)
+}
+```
+
+---
+
+### 9. `PostHeader(url string, body io.Reader, contentType string) (http.Header, error)`
+
+Makes an HTTP POST request and returns response headers.
+
+**Signature:**
+```go
+func PostHeader(url string, body io.Reader, contentType string) (http.Header, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): POST request body
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+- `error`: Error if occurs
+
+**Behavior:**
+- Makes HTTP POST request
+- Returns error if status code is not 200
+- Returns headers
+- `http.Header` is case-insensitive map
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("test"))
+	
+	headers, err := gosugar.PostHeader(
+		"https://httpbin.org/post",
+		body,
+		"text/plain",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+	fmt.Println("Server:", headers.Get("Server"))
+}
+```
+
+---
+
+### 10. `MustPostHeader(url string, body io.Reader, contentType string) http.Header`
+
+Like `PostHeader` but panics if error occurs.
+
+**Signature:**
+```go
+func MustPostHeader(url string, body io.Reader, contentType string) http.Header
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): POST request body
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("data"))
+	
+	headers := gosugar.MustPostHeader(
+		"https://httpbin.org/post",
+		body,
+		"text/plain",
+	)
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+}
+```
+
+---
+
 ## Examples
 
 ### Example 1: API Call
@@ -342,7 +622,7 @@ func main() {
 
 ⚠️ **Current Version Limitations:**
 
-1. **Only GET requests**: POST, PUT, DELETE not yet available
+1. **GET and POST requests available**: PUT, DELETE not yet available
 2. **Only 200 OK**: Other success status codes (3xx) treated as errors
 3. **No custom headers**: Cannot add Authorization etc.
 4. **No timeout**: May wait indefinitely on slow connections
