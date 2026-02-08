@@ -537,6 +537,549 @@ func main() {
 
 ---
 
+### 11. `PutBody(url string, body io.Reader, contentType string) (string, error)`
+
+Makes an HTTP PUT request and returns the response body as a string.
+
+**Signature:**
+```go
+func PutBody(url string, body io.Reader, contentType string) (string, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): PUT request body
+- `contentType` (string): Content-Type header value (e.g., "application/json")
+
+**Return Value:**
+- `body` (string): Response body
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Makes HTTP PUT request
+- Returns error if status code is not 200 OK
+- Converts body to string and returns
+
+**Error Cases:**
+- Network error: returns error
+- Non-200 status: `fmt.Errorf("status code: %d")`
+- Body read error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("updated data"))
+	
+	response, err := gosugar.PutBody(
+		"https://httpbin.org/put",
+		body,
+		"application/json",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Response:", response[:100])
+}
+```
+
+---
+
+### 12. `MustPutBody(url string, body io.Reader, contentType string) string`
+
+Like `PutBody` but panics if error occurs.
+
+**Signature:**
+```go
+func MustPutBody(url string, body io.Reader, contentType string) string
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): PUT request body
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `body` (string): Response body
+
+**Behavior:**
+- Calls PutBody
+- Panics if error occurs
+- Otherwise returns response
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("data"))
+	
+	response := gosugar.MustPutBody(
+		"https://httpbin.org/put",
+		body,
+		"text/plain",
+	)
+	fmt.Println("Response:", response[:50])
+}
+```
+
+---
+
+### 13. `PutJSON[T any](url string, payload any) (T, error)`
+
+Makes an HTTP PUT request with JSON payload and decodes the JSON response.
+
+**Signature:**
+```go
+func PutJSON[T any](url string, payload any) (T, error)
+```
+
+**Type Parameter:**
+- `T`: Struct type to decode response into
+
+**Parameters:**
+- `url` (string): URL to request
+- `payload` (any): Data to encode as JSON
+
+**Return Value:**
+- `result` (T): Decoded response data
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Encodes payload to JSON
+- Calls PutBody
+- Decodes JSON response using `json.Unmarshal()`
+- Returns value of type T on success
+
+**Error Cases:**
+- JSON encode error: returns error
+- PutBody error: returns error
+- JSON decode error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	type UpdatePostRequest struct {
+		Title  string `json:"title"`
+		Body   string `json:"body"`
+	}
+
+	type UpdatePostResponse struct {
+		ID    int    `json:"id"`
+		Title string `json:"title"`
+		Body  string `json:"body"`
+	}
+
+	payload := UpdatePostRequest{
+		Title: "Updated Post",
+		Body:  "This post has been updated",
+	}
+
+	response, err := gosugar.PutJSON[UpdatePostResponse](
+		"https://jsonplaceholder.typicode.com/posts/1",
+		payload,
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Printf("Updated Post: %d - %s\n", response.ID, response.Title)
+}
+```
+
+---
+
+### 14. `PutHeader(url string, body io.Reader, contentType string) (http.Header, error)`
+
+Makes an HTTP PUT request and returns response headers.
+
+**Signature:**
+```go
+func PutHeader(url string, body io.Reader, contentType string) (http.Header, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): PUT request body
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+- `error`: Error if occurs
+
+**Behavior:**
+- Makes HTTP PUT request
+- Returns error if status code is not 200
+- Returns headers
+- `http.Header` is case-insensitive map
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("test"))
+	
+	headers, err := gosugar.PutHeader(
+		"https://httpbin.org/put",
+		body,
+		"text/plain",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+	fmt.Println("Server:", headers.Get("Server"))
+}
+```
+
+---
+
+### 15. `MustPutHeader(url string, body io.Reader, contentType string) http.Header`
+
+Like `PutHeader` but panics if error occurs.
+
+**Signature:**
+```go
+func MustPutHeader(url string, body io.Reader, contentType string) http.Header
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): PUT request body
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte("data"))
+	
+	headers := gosugar.MustPutHeader(
+		"https://httpbin.org/put",
+		body,
+		"text/plain",
+	)
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+}
+```
+
+---
+
+### 16. `DeleteBody(url string, body io.Reader, contentType string) (string, error)`
+
+Makes an HTTP DELETE request and returns the response body as a string.
+
+**Signature:**
+```go
+func DeleteBody(url string, body io.Reader, contentType string) (string, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): DELETE request body (optional)
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `body` (string): Response body
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Makes HTTP DELETE request
+- Returns error if status code is not 200 OK
+- Converts body to string and returns
+
+**Error Cases:**
+- Network error: returns error
+- Non-200 status: `fmt.Errorf("status code: %d")`
+- Body read error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte(""))
+	
+	response, err := gosugar.DeleteBody(
+		"https://httpbin.org/delete",
+		body,
+		"application/json",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Response:", response[:100])
+}
+```
+
+---
+
+### 17. `MustDeleteBody(url string, body io.Reader, contentType string) string`
+
+Like `DeleteBody` but panics if error occurs.
+
+**Signature:**
+```go
+func MustDeleteBody(url string, body io.Reader, contentType string) string
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): DELETE request body (optional)
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `body` (string): Response body
+
+**Behavior:**
+- Calls DeleteBody
+- Panics if error occurs
+- Otherwise returns response
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte(""))
+	
+	response := gosugar.MustDeleteBody(
+		"https://httpbin.org/delete",
+		body,
+		"text/plain",
+	)
+	fmt.Println("Response:", response[:50])
+}
+```
+
+---
+
+### 18. `DeleteJSON[T any](url string, payload any) (T, error)`
+
+Makes an HTTP DELETE request with JSON payload and decodes the JSON response.
+
+**Signature:**
+```go
+func DeleteJSON[T any](url string, payload any) (T, error)
+```
+
+**Type Parameter:**
+- `T`: Struct type to decode response into
+
+**Parameters:**
+- `url` (string): URL to request
+- `payload` (any): Data to encode as JSON
+
+**Return Value:**
+- `result` (T): Decoded response data
+- `error`: Error if occurs, nil otherwise
+
+**Behavior:**
+- Encodes payload to JSON
+- Calls DeleteBody
+- Decodes JSON response using `json.Unmarshal()`
+- Returns value of type T on success
+
+**Error Cases:**
+- JSON encode error: returns error
+- DeleteBody error: returns error
+- JSON decode error: returns error
+
+**Example:**
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	type DeleteResponse struct {
+		ID      int    `json:"id"`
+		Deleted bool   `json:"deleted"`
+	}
+
+	payload := map[string]interface{}{
+		"reason": "no longer needed",
+	}
+
+	response, err := gosugar.DeleteJSON[DeleteResponse](
+		"https://jsonplaceholder.typicode.com/posts/1",
+		payload,
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Printf("Deleted: %v\n", response.Deleted)
+}
+```
+
+---
+
+### 19. `DeleteHeader(url string, body io.Reader, contentType string) (http.Header, error)`
+
+Makes an HTTP DELETE request and returns response headers.
+
+**Signature:**
+```go
+func DeleteHeader(url string, body io.Reader, contentType string) (http.Header, error)
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): DELETE request body (optional)
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+- `error`: Error if occurs
+
+**Behavior:**
+- Makes HTTP DELETE request
+- Returns error if status code is not 200
+- Returns headers
+- `http.Header` is case-insensitive map
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte(""))
+	
+	headers, err := gosugar.DeleteHeader(
+		"https://httpbin.org/delete",
+		body,
+		"text/plain",
+	)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+	fmt.Println("Server:", headers.Get("Server"))
+}
+```
+
+---
+
+### 20. `MustDeleteHeader(url string, body io.Reader, contentType string) http.Header`
+
+Like `DeleteHeader` but panics if error occurs.
+
+**Signature:**
+```go
+func MustDeleteHeader(url string, body io.Reader, contentType string) http.Header
+```
+
+**Parameters:**
+- `url` (string): URL to request
+- `body` (io.Reader): DELETE request body (optional)
+- `contentType` (string): Content-Type header value
+
+**Return Value:**
+- `headers` (http.Header): Response headers
+
+**Example:**
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/coderianx/gosugar"
+)
+
+func main() {
+	body := bytes.NewReader([]byte(""))
+	
+	headers := gosugar.MustDeleteHeader(
+		"https://httpbin.org/delete",
+		body,
+		"text/plain",
+	)
+	fmt.Println("Content-Type:", headers.Get("Content-Type"))
+}
+```
+
+---
+
 ## Examples
 
 ### Example 1: API Call
@@ -622,10 +1165,11 @@ func main() {
 
 ⚠️ **Current Version Limitations:**
 
-1. **GET and POST requests available**: PUT, DELETE not yet available
-2. **Only 200 OK**: Other success status codes (3xx) treated as errors
-3. **No custom headers**: Cannot add Authorization etc.
-4. **No timeout**: May wait indefinitely on slow connections
+1. **Only 200 OK**: Other success status codes (2xx, 3xx) treated as errors
+2. **No custom headers**: Cannot add Authorization etc.
+3. **No timeout**: May wait indefinitely on slow connections
+4. **No redirect handling**: Does not follow redirects
+5. **No request cancellation**: Cannot cancel requests once started
 
 **Workaround:** Use `net/http` package directly.
 
