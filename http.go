@@ -1,6 +1,7 @@
 package gosugar
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -244,6 +245,232 @@ func PostHeader(url string, body io.Reader, contentType string) (http.Header, er
 // and panics on error.
 func MustPostHeader(url string, body io.Reader, contentType string) http.Header {
 	headers, err := PostHeader(url, body, contentType)
+	if err != nil {
+		panic(err)
+	}
+	return headers
+}
+
+// PUT requests
+
+// PutBody sends an HTTP PUT request to the given URL
+// with the provided body and content type,
+// and returns the response body as a string.
+func PutBody(url string, body io.Reader, contentType string) (string, error) {
+	req, err := http.NewRequest("PUT", url, body)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf(
+			"status code: %d",
+			resp.StatusCode,
+		)
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(respBody), nil
+}
+
+// MustPutBody sends an HTTP PUT request and panics on error.
+func MustPutBody(url string, body io.Reader, contentType string) string {
+	result, err := PutBody(url, body, contentType)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
+// PutJSON sends an HTTP PUT request with a JSON payload
+// and decodes the JSON response into type T.
+func PutJSON[T any](url string, payload any) (T, error) {
+	var result T
+
+	// Encode payload to JSON
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return result, err
+	}
+
+	respBody, err := PutBody(
+		url,
+		bytes.NewReader(data),
+		"application/json",
+	)
+	if err != nil {
+		return result, err
+	}
+
+	err = json.Unmarshal([]byte(respBody), &result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+// PutHeader sends an HTTP PUT request
+// and returns the response headers.
+func PutHeader(url string, body io.Reader, contentType string) (http.Header, error) {
+	req, err := http.NewRequest("PUT", url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"status code: %d",
+			resp.StatusCode,
+		)
+	}
+
+	return resp.Header, nil
+}
+
+// MustPutHeader sends an HTTP PUT request
+// and panics on error.
+func MustPutHeader(url string, body io.Reader, contentType string) http.Header {
+	headers, err := PutHeader(url, body, contentType)
+	if err != nil {
+		panic(err)
+	}
+	return headers
+}
+
+// DELETE requests
+
+// DeleteBody sends an HTTP DELETE request to the given URL
+// with the provided body and content type,
+// and returns the response body as a string.
+func DeleteBody(url string, body io.Reader, contentType string) (string, error) {
+	req, err := http.NewRequest("DELETE", url, body)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf(
+			"status code: %d",
+			resp.StatusCode,
+		)
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(respBody), nil
+}
+
+// MustDeleteBody sends an HTTP DELETE request and panics on error.
+func MustDeleteBody(url string, body io.Reader, contentType string) string {
+	result, err := DeleteBody(url, body, contentType)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
+// DeleteJSON sends an HTTP DELETE request with a JSON payload
+// and decodes the JSON response into type T.
+func DeleteJSON[T any](url string, payload any) (T, error) {
+	var result T
+
+	// Encode payload to JSON
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return result, err
+	}
+
+	respBody, err := DeleteBody(
+		url,
+		bytes.NewReader(data),
+		"application/json",
+	)
+	if err != nil {
+		return result, err
+	}
+
+	err = json.Unmarshal([]byte(respBody), &result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+// DeleteHeader sends an HTTP DELETE request
+// and returns the response headers.
+func DeleteHeader(url string, body io.Reader, contentType string) (http.Header, error) {
+	req, err := http.NewRequest("DELETE", url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"status code: %d",
+			resp.StatusCode,
+		)
+	}
+
+	return resp.Header, nil
+}
+
+// MustDeleteHeader sends an HTTP DELETE request
+// and panics on error.
+func MustDeleteHeader(url string, body io.Reader, contentType string) http.Header {
+	headers, err := DeleteHeader(url, body, contentType)
 	if err != nil {
 		panic(err)
 	}
